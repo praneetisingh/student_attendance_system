@@ -1,0 +1,13 @@
+# Virtual Environment
+venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Database (Keep this line if you want the host to create a fresh DB)
+attendance_system.db 
+
+# Logs and Environment files
+*.log
+.env
