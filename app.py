@@ -3,9 +3,13 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import date
 
 # --- 1. Initialization and Configuration ---
+import os
 app = Flask(__name__)
-# Configure Database (SQLite for local development)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///attendance_system.db'
+# Configure Database - Use PostgreSQL on Render, SQLite locally
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///attendance_system.db')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -61,6 +65,27 @@ def populate_initial_data():
         print("Initial data already present.")
 
 # --- 4. API Endpoints (Core Business Logic) ---
+
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint - API information."""
+    return jsonify({
+        "message": "Student Attendance System API",
+        "endpoints": {
+            "health": "/health",
+            "mark_attendance": "/api/mark_attendance (POST)",
+            "view_report": "/api/report/<enroll_no> (GET)"
+        }
+    }), 200
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for deployment status testing."""
+    return jsonify({
+        "status": "healthy",
+        "message": "Student Attendance System API is running",
+        "database": "connected"
+    }), 200
 
 @app.route('/api/mark_attendance', methods=['POST'])
 def mark_attendance_api():
