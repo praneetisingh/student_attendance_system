@@ -33,6 +33,40 @@ header h1 {
     opacity: 0.9;
 }
 
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.user-info {
+    color: #555;
+    font-size: 0.95em;
+}
+
+.user-info strong {
+    color: #667eea;
+}
+
+.logout-btn {
+    padding: 8px 20px;
+    background: #dc3545;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.9em;
+    transition: background 0.3s;
+}
+
+.logout-btn:hover {
+    background: #c82333;
+}
+
 .tabs {
     display: flex;
     gap: 10px;

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Student Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .demo-credentials {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        .demo-credentials strong {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🎓 Student Attendance System</h1>
+                <p class="subtitle">Faculty Login</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="faculty_id">Faculty ID *</label>
+                    <input type="text" id="faculty_id" name="faculty_id" placeholder="Enter Faculty ID" required autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" name="password" placeholder="Enter Password" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Login</button>
+                
+                <div id="login-result" class="result-message"></div>
+            </form>
+            
+            <div class="demo-credentials">
+                <strong>Login Credentials:</strong><br>
+                Faculty/Teacher ID: <code>F001</code> or <code>T001</code><br>
+                Password: <code>admin</code> or <code>teacher</code>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const faculty_id = document.getElementById('faculty_id').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('login-result');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Logging in...';
+            resultDiv.classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ faculty_id, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Store session info
+                    sessionStorage.setItem('faculty_id', faculty_id);
+                    sessionStorage.setItem('logged_in', 'true');
+                    // Redirect to main page
+                    window.location.href = '/';
+                } else {
+                    resultDiv.className = 'result-message error show';
+                    resultDiv.textContent = '❌ ' + (data.message || 'Invalid credentials');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Login';
+                }
+            } catch (error) {
+                resultDiv.className = 'result-message error show';
+                resultDiv.textContent = '❌ Network Error: ' + error.message;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
+            }
+        });
+    </script>
+</body>
+</html>
+

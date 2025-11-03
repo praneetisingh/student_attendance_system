@@ -5,6 +5,17 @@ const API_BASE_URL = window.location.origin.includes('onrender.com')
 
 // Check API status on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if logged in
+    if (!sessionStorage.getItem('logged_in')) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    // Set current faculty ID
+    const facultyId = sessionStorage.getItem('faculty_id') || 'F001';
+    document.getElementById('current-faculty').textContent = facultyId;
+    document.getElementById('faculty_id').value = facultyId;
+    
     checkAPIStatus();
     
     // Mark attendance form submission
@@ -12,6 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // View report form submission
     document.getElementById('report-form').addEventListener('submit', handleViewReport);
+    
+    // Add student form submission
+    document.getElementById('add-student-form').addEventListener('submit', handleAddStudent);
+    
+    // Load students list
+    refreshStudentsList();
 });
 
 // Tab switching
@@ -27,14 +44,26 @@ function showTab(tabName) {
     });
     
     // Show selected tab
-    document.getElementById(`${tabName}-tab`).classList.add('active');
+    const tabElement = document.getElementById(`${tabName}-tab`);
+    if (tabElement) {
+        tabElement.classList.add('active');
+    }
     
     // Add active class to clicked button
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     
     // Clear results
-    document.getElementById('mark-result').classList.remove('show');
-    document.getElementById('report-result').classList.remove('show');
+    const markResult = document.getElementById('mark-result');
+    const reportResult = document.getElementById('report-result');
+    if (markResult) markResult.classList.remove('show');
+    if (reportResult) reportResult.classList.remove('show');
+    
+    // Refresh students list if manage tab
+    if (tabName === 'manage') {
+        refreshStudentsList();
+    }
 }
 
 // Check API status
@@ -96,6 +125,7 @@ async function handleMarkAttendance(event) {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',  // Include cookies for session
             body: JSON.stringify(requestData)
         });
         
@@ -139,7 +169,9 @@ async function handleViewReport(event) {
     resultDiv.classList.add('show');
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/report/${enroll_no}`);
+        const response = await fetch(`${API_BASE_URL}/api/report/${enroll_no}`, {
+            credentials: 'include'  // Include cookies for session
+        });
         const data = await response.json();
         
         if (response.ok) {
@@ -230,5 +262,121 @@ function generateReportHTML(data) {
             </table>
         </div>
     `;
+}
+
+// Handle add student form submission
+async function handleAddStudent(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const enroll_no = document.getElementById('new_enroll_no').value.trim();
+    const name = document.getElementById('new_student_name').value.trim();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const resultDiv = document.getElementById('add-student-result');
+    
+    if (!enroll_no || !name) {
+        resultDiv.className = 'result-message error show';
+        resultDiv.textContent = '❌ Please fill in all fields';
+        return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+    resultDiv.classList.remove('show');
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/add_student`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',  // Include cookies for session
+            body: JSON.stringify({ enroll_no, name })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            resultDiv.className = 'result-message success show';
+            resultDiv.textContent = `✅ ${data.message}`;
+            form.reset();
+            // Refresh students list
+            refreshStudentsList();
+            // Refresh attendance form student list
+            refreshAttendanceForm();
+        } else {
+            resultDiv.className = 'result-message error show';
+            resultDiv.textContent = `❌ ${data.message || 'Failed to add student'}`;
+        }
+    } catch (error) {
+        resultDiv.className = 'result-message error show';
+        resultDiv.textContent = `❌ Network Error: ${error.message}`;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add Student';
+    }
+}
+
+// Refresh students list
+async function refreshStudentsList() {
+    const container = document.getElementById('students-list-container');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/list_students`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.students) {
+            if (data.students.length === 0) {
+                container.innerHTML = '<div class="result-message info">No students found. Add a student to get started.</div>';
+            } else {
+                let html = '<table class="history-table"><thead><tr><th>Enrollment Number</th><th>Name</th></tr></thead><tbody>';
+                data.students.forEach(student => {
+                    html += `<tr><td><strong>${student.enroll_no}</strong></td><td>${student.name}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            }
+        } else {
+            container.innerHTML = '<div class="result-message error">Failed to load students</div>';
+        }
+    } catch (error) {
+        container.innerHTML = '<div class="result-message error">Error loading students: ' + error.message + '</div>';
+    }
+}
+
+// Refresh attendance form with current students
+async function refreshAttendanceForm() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/list_students`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.students) {
+            const studentsList = document.getElementById('students-list');
+            if (studentsList) {
+                studentsList.innerHTML = '';
+                data.students.forEach(student => {
+                    const row = document.createElement('div');
+                    row.className = 'student-row';
+                    row.innerHTML = `
+                        <span class="student-name">${student.enroll_no} - ${student.name}</span>
+                        <select name="status_${student.enroll_no}" class="status-select">
+                            <option value="Present">Present</option>
+                            <option value="Absent">Absent</option>
+                        </select>
+                    `;
+                    studentsList.appendChild(row);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error refreshing attendance form:', error);
+    }
 }
 

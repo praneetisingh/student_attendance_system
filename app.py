@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
+from functools import wraps
 
 # --- 1. Initialization and Configuration ---
 import os
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'demo-secret-key-change-in-production')
 # Configure Database - Use PostgreSQL on Render, SQLite locally
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///attendance_system.db')
 if database_url.startswith('postgres://'):
@@ -53,15 +55,30 @@ class AttendanceRecord(db.Model):
 # Helper function for security (Simulated Authorization - checks SRS requirement)
 def is_faculty_authorized(faculty_id, course_id):
     # For a simple demo, we assume faculty F001 is authorized for all courses
-    return faculty_id == 'F001' 
+    return faculty_id == 'F001'
+
+# Simple demo authentication (for production, use proper auth library like Flask-Login)
+DEMO_CREDENTIALS = {
+    'F001': 'admin',   # Faculty ID: Password (Default teacher)
+    'T001': 'teacher', # Teacher account
+    'T002': 'teacher'  # Another teacher account
+}
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function 
 
 def populate_initial_data():
     if not Student.query.first():
         print("Inserting initial data...")
         
         # Add two test students and one course
-        student1 = Student(enroll_no='S1001', name='Alice Smith')
-        student2 = Student(enroll_no='S1002', name='Bob Johnson')
+        student1 = Student(enroll_no='S1001', name='Ananya Sharma')
+        student2 = Student(enroll_no='S1002', name='Siya Singh')
         course1 = Course(course_id='CS101', title='Computer Science Basics')
         
         db.session.add_all([student1, student2, course1])
@@ -72,7 +89,21 @@ def populate_initial_data():
 
 # --- 4. API Endpoints (Core Business Logic) ---
 
+@app.route('/login', methods=['GET'])
+def login():
+    """Login page."""
+    if session.get('logged_in'):
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    """Logout."""
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/', methods=['GET'])
+@login_required
 def index():
     """Serve the web interface."""
     return render_template('index.html')
@@ -220,6 +251,86 @@ def view_attendance_report(enroll_no):
         },
         "detailed_history": detailed_records
     }), 200
+
+@app.route('/api/login', methods=['POST'])
+def login_api():
+    """Simple demo login endpoint."""
+    data = request.get_json()
+    faculty_id = data.get('faculty_id')
+    password = data.get('password')
+    
+    if faculty_id in DEMO_CREDENTIALS and DEMO_CREDENTIALS[faculty_id] == password:
+        session['logged_in'] = True
+        session['faculty_id'] = faculty_id
+        return jsonify({
+            "success": True,
+            "message": "Login successful",
+            "faculty_id": faculty_id
+        }), 200
+    else:
+        return jsonify({
+            "success": False,
+            "message": "Invalid Faculty ID or Password"
+        }), 401
+
+@app.route('/api/add_student', methods=['POST'])
+@login_required
+def add_student_api():
+    """Add a new student to the system."""
+    data = request.get_json()
+    enroll_no = data.get('enroll_no')
+    name = data.get('name')
+    
+    if not enroll_no or not name:
+        return jsonify({"message": "Enrollment number and name are required"}), 400
+    
+    # Check if student already exists
+    existing_student = Student.query.filter_by(enroll_no=enroll_no).first()
+    if existing_student:
+        return jsonify({"message": f"Student with enrollment number {enroll_no} already exists"}), 409
+    
+    try:
+        new_student = Student(enroll_no=enroll_no, name=name)
+        db.session.add(new_student)
+        db.session.commit()
+        return jsonify({
+            "message": f"Student {name} ({enroll_no}) added successfully",
+            "student": {
+                "enroll_no": enroll_no,
+                "name": name
+            }
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error adding student: {str(e)}"}), 500
+
+@app.route('/api/list_students', methods=['GET'])
+@login_required
+def list_students_api():
+    """Get list of all students."""
+    try:
+        students = Student.query.all()
+        students_list = [{"enroll_no": s.enroll_no, "name": s.name} for s in students]
+        return jsonify({
+            "students": students_list,
+            "count": len(students_list)
+        }), 200
+    except Exception as e:
+        return jsonify({"message": f"Error fetching students: {str(e)}"}), 500
+
+@app.route('/api/list_courses', methods=['GET'])
+@login_required
+def list_courses_api():
+    """Get list of all courses."""
+    try:
+        courses = Course.query.all()
+        courses_list = [{"course_id": c.course_id, "title": c.title} for c in courses]
+        return jsonify({
+            "courses": courses_list,
+            "count": len(courses_list)
+        }), 200
+    except Exception as e:
+        return jsonify({"message": f"Error fetching courses: {str(e)}"}), 500
 
 
 # --- 5. Application Execution Block ---

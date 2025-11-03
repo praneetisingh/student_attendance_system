@@ -13,15 +13,9 @@
             <p class="subtitle">Mark and view student attendance records</p>
         </header>
 
-        <div class="header-actions">
-            <span class="user-info">Logged in as: <strong id="current-faculty">F001</strong></span>
-            <a href="/logout" class="logout-btn">Logout</a>
-        </div>
-        
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('mark')">Mark Attendance</button>
             <button class="tab-button" onclick="showTab('view')">View Reports</button>
-            <button class="tab-button" onclick="showTab('manage')">Manage Students</button>
         </div>
 
         <!-- Mark Attendance Tab -->
@@ -79,33 +73,6 @@
                 </form>
 
                 <div id="report-result" class="result-message"></div>
-            </div>
-        </div>
-
-        <!-- Manage Students Tab -->
-        <div id="manage-tab" class="tab-content">
-            <div class="card">
-                <h2>Add New Student</h2>
-                <form id="add-student-form">
-                    <div class="form-group">
-                        <label for="new_enroll_no">Enrollment Number *</label>
-                        <input type="text" id="new_enroll_no" name="new_enroll_no" placeholder="e.g., S1003" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="new_student_name">Student Name *</label>
-                        <input type="text" id="new_student_name" name="new_student_name" placeholder="e.g., Charlie Brown" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add Student</button>
-                </form>
-                <div id="add-student-result" class="result-message"></div>
-                
-                <div style="margin-top: 40px;">
-                    <h3>All Students</h3>
-                    <button onclick="refreshStudentsList()" class="btn" style="background: #6c757d; color: white; margin-bottom: 15px;">Refresh List</button>
-                    <div id="students-list-container">
-                        <div class="loading">Loading students...</div>
-                    </div>
-                </div>
             </div>
         </div>
 
