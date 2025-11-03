@@ -13,9 +13,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,  # Verify connections before using
-    'connect_args': {'connect_timeout': 10}  # Connection timeout
+    'connect_args': {'connect_timeout': 10},  # Connection timeout
+    'pool_recycle': 300,  # Recycle connections after 5 minutes
 }
+# Initialize SQLAlchemy but don't connect yet (lazy initialization)
 db = SQLAlchemy(app)
+# Set echo to False to avoid connection attempts during import
+db.engine.echo = False
 
 # --- 2. Database Models (E-R Diagram Implementation) ---
 
