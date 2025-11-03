@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 Student Attendance System</h1>
+            <p class="subtitle">Mark and view student attendance records</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('mark')">Mark Attendance</button>
+            <button class="tab-button" onclick="showTab('view')">View Reports</button>
+        </div>
+
+        <!-- Mark Attendance Tab -->
+        <div id="mark-tab" class="tab-content active">
+            <div class="card">
+                <h2>Mark Daily Attendance</h2>
+                <form id="attendance-form">
+                    <div class="form-group">
+                        <label for="faculty_id">Faculty ID *</label>
+                        <input type="text" id="faculty_id" name="faculty_id" value="F001" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="course_id">Course ID *</label>
+                        <input type="text" id="course_id" name="course_id" value="CS101" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Students Attendance *</label>
+                        <div id="students-list">
+                            <div class="student-row">
+                                <span class="student-name">S1001 - Alice Smith</span>
+                                <select name="status_S1001" class="status-select">
+                                    <option value="Present">Present</option>
+                                    <option value="Absent">Absent</option>
+                                </select>
+                            </div>
+                            <div class="student-row">
+                                <span class="student-name">S1002 - Bob Johnson</span>
+                                <select name="status_S1002" class="status-select">
+                                    <option value="Present">Present</option>
+                                    <option value="Absent">Absent</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit Attendance</button>
+                </form>
+
+                <div id="mark-result" class="result-message"></div>
+            </div>
+        </div>
+
+        <!-- View Reports Tab -->
+        <div id="view-tab" class="tab-content">
+            <div class="card">
+                <h2>View Student Attendance Report</h2>
+                <form id="report-form">
+                    <div class="form-group">
+                        <label for="enroll_no">Student Enrollment Number *</label>
+                        <input type="text" id="enroll_no" name="enroll_no" placeholder="e.g., S1001" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Get Report</button>
+                </form>
+
+                <div id="report-result" class="result-message"></div>
+            </div>
+        </div>
+
+        <div class="status-indicator">
+            <span id="api-status" class="status-dot"></span>
+            <span id="api-status-text">Checking API...</span>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

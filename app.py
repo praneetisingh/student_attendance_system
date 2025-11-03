@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
 
@@ -73,6 +73,11 @@ def populate_initial_data():
 # --- 4. API Endpoints (Core Business Logic) ---
 
 @app.route('/', methods=['GET'])
+def index():
+    """Serve the web interface."""
+    return render_template('index.html')
+
+@app.route('/api', methods=['GET'])
 def root():
     """Root endpoint - API information."""
     return jsonify({
