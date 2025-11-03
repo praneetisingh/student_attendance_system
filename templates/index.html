@@ -101,10 +101,14 @@
                 
                 <div style="margin-top: 40px;">
                     <h3>All Students</h3>
-                    <button onclick="refreshStudentsList()" class="btn" style="background: #6c757d; color: white; margin-bottom: 15px;">Refresh List</button>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button onclick="refreshStudentsList()" class="btn" style="background: #6c757d; color: white;">Refresh List</button>
+                        <button onclick="fixStudentNames()" class="btn" style="background: #28a745; color: white;">Fix Student Names (S1001/S1002)</button>
+                    </div>
                     <div id="students-list-container">
                         <div class="loading">Loading students...</div>
                     </div>
+                    <div id="fix-names-result" class="result-message"></div>
                 </div>
             </div>
         </div>

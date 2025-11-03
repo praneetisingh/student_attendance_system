@@ -380,3 +380,35 @@ async function refreshAttendanceForm() {
     }
 }
 
+// Fix student names function
+async function fixStudentNames() {
+    const resultDiv = document.getElementById('fix-names-result');
+    if (!resultDiv) return;
+    
+    resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Fixing names...</div>';
+    resultDiv.classList.add('show');
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/fix_student_names`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            resultDiv.className = 'result-message success show';
+            resultDiv.innerHTML = `✅ ${data.message}<br>S1001: ${data.updated.S1001}<br>S1002: ${data.updated.S1002}`;
+            // Refresh both lists
+            refreshStudentsList();
+            refreshAttendanceForm();
+        } else {
+            resultDiv.className = 'result-message error show';
+            resultDiv.textContent = `❌ ${data.message || 'Failed to fix names'}`;
+        }
+    } catch (error) {
+        resultDiv.className = 'result-message error show';
+        resultDiv.textContent = `❌ Network Error: ${error.message}`;
+    }
+}
+

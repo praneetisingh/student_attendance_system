@@ -74,19 +74,38 @@ def login_required(f):
     return decorated_function 
 
 def populate_initial_data():
-    if not Student.query.first():
-        print("Inserting initial data...")
-        
-        # Add two test students and one course
-        student1 = Student(enroll_no='S1001', name='Ananya Sharma')
-        student2 = Student(enroll_no='S1002', name='Siya Singh')
-        course1 = Course(course_id='CS101', title='Computer Science Basics')
-        
-        db.session.add_all([student1, student2, course1])
-        db.session.commit()
-        print("Initial students and course added.")
+    # Update or create initial students
+    print("Checking/updating initial data...")
+    
+    # Update or create S1001
+    student1 = Student.query.filter_by(enroll_no='S1001').first()
+    if student1:
+        student1.name = 'Ananya Sharma'
+        print("Updated S1001 to Ananya Sharma")
     else:
-        print("Initial data already present.")
+        student1 = Student(enroll_no='S1001', name='Ananya Sharma')
+        db.session.add(student1)
+        print("Created S1001 - Ananya Sharma")
+    
+    # Update or create S1002
+    student2 = Student.query.filter_by(enroll_no='S1002').first()
+    if student2:
+        student2.name = 'Siya Singh'
+        print("Updated S1002 to Siya Singh")
+    else:
+        student2 = Student(enroll_no='S1002', name='Siya Singh')
+        db.session.add(student2)
+        print("Created S1002 - Siya Singh")
+    
+    # Add course if not exists
+    course1 = Course.query.filter_by(course_id='CS101').first()
+    if not course1:
+        course1 = Course(course_id='CS101', title='Computer Science Basics')
+        db.session.add(course1)
+        print("Added course CS101")
+    
+    db.session.commit()
+    print("Initial data check/update complete.")
 
 # --- 4. API Endpoints (Core Business Logic) ---
 
@@ -332,6 +351,64 @@ def list_courses_api():
         }), 200
     except Exception as e:
         return jsonify({"message": f"Error fetching courses: {str(e)}"}), 500
+
+@app.route('/api/update_student', methods=['POST'])
+@login_required
+def update_student_api():
+    """Update an existing student's information."""
+    data = request.get_json()
+    enroll_no = data.get('enroll_no')
+    name = data.get('name')
+    
+    if not enroll_no:
+        return jsonify({"message": "Enrollment number is required"}), 400
+    
+    try:
+        student = Student.query.filter_by(enroll_no=enroll_no).first()
+        if not student:
+            return jsonify({"message": f"Student with enrollment number {enroll_no} not found"}), 404
+        
+        if name:
+            student.name = name
+        
+        db.session.commit()
+        return jsonify({
+            "message": f"Student {enroll_no} updated successfully",
+            "student": {
+                "enroll_no": student.enroll_no,
+                "name": student.name
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error updating student: {str(e)}"}), 500
+
+@app.route('/api/fix_student_names', methods=['POST'])
+@login_required
+def fix_student_names_api():
+    """Fix/update student names to correct ones."""
+    try:
+        # Update S1001 if exists
+        student1 = Student.query.filter_by(enroll_no='S1001').first()
+        if student1:
+            student1.name = 'Ananya Sharma'
+        
+        # Update S1002 if exists
+        student2 = Student.query.filter_by(enroll_no='S1002').first()
+        if student2:
+            student2.name = 'Siya Singh'
+        
+        db.session.commit()
+        return jsonify({
+            "message": "Student names updated successfully",
+            "updated": {
+                "S1001": "Ananya Sharma",
+                "S1002": "Siya Singh"
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Error updating names: {str(e)}"}), 500
 
 
 # --- 5. Application Execution Block ---
