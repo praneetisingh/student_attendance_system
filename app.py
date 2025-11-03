@@ -54,8 +54,9 @@ class AttendanceRecord(db.Model):
 
 # Helper function for security (Simulated Authorization - checks SRS requirement)
 def is_faculty_authorized(faculty_id, course_id):
-    # For a simple demo, we assume faculty F001 is authorized for all courses
-    return faculty_id == 'F001'
+    # All logged-in teachers are authorized (F001, T001, T002, etc.)
+    # In production, this would check actual course assignments
+    return faculty_id in DEMO_CREDENTIALS or faculty_id.startswith('T') or faculty_id.startswith('F')
 
 # Simple demo authentication (for production, use proper auth library like Flask-Login)
 DEMO_CREDENTIALS = {
