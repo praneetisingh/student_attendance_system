@@ -11,6 +11,10 @@ if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,  # Verify connections before using
+    'connect_args': {'connect_timeout': 10}  # Connection timeout
+}
 db = SQLAlchemy(app)
 
 # --- 2. Database Models (E-R Diagram Implementation) ---
@@ -84,16 +88,27 @@ def health_check():
     # Auto-initialize database on first request if not already done
     try:
         with app.app_context():
+            # Test database connection first
+            db.engine.connect()
             db.create_all()
             # Only populate if database is empty
             if not Student.query.first():
                 populate_initial_data()
     except Exception as e:
-        return jsonify({
-            "status": "unhealthy",
-            "message": "Database connection error",
-            "error": str(e)
-        }), 503
+        error_msg = str(e)
+        # Check if it's a connection issue
+        if 'DATABASE_URL' in error_msg or 'connection' in error_msg.lower():
+            return jsonify({
+                "status": "unhealthy",
+                "message": "Database connection error - check DATABASE_URL environment variable",
+                "error": error_msg[:200]  # Limit error message length
+            }), 503
+        else:
+            return jsonify({
+                "status": "unhealthy",
+                "message": "Database error",
+                "error": error_msg[:200]
+            }), 503
     
     return jsonify({
         "status": "healthy",
