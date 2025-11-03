@@ -1,6 +1,4 @@
 #!/bin/bash
-set -e  # Exit on error
-
 # Initialize the database by calling the setup functions inside Flask context
 echo "Initializing database..."
 python -c "
@@ -9,14 +7,13 @@ try:
     with app.app_context():
         db.create_all()
         populate_initial_data()
-    print('Database initialized successfully')
+        print('Database initialized successfully')
 except Exception as e:
-    print(f'Database initialization error: {e}')
-    import sys
-    sys.exit(1)
-"
+    print(f'Warning: Database initialization error: {e}')
+    print('App will start anyway - database will be created on first request')
+" || echo "Database init had issues, continuing anyway..."
 
 # Start the production web server
 echo "Starting Gunicorn..."
 # Use PORT environment variable if set (for Render), otherwise default to 5000
-exec gunicorn app:app --bind 0.0.0.0:${PORT:-5000} --timeout 120
+exec gunicorn app:app --bind 0.0.0.0:${PORT:-5000} --timeout 120 --access-logfile - --error-logfile -

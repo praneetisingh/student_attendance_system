@@ -81,6 +81,20 @@ def root():
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for deployment status testing."""
+    # Auto-initialize database on first request if not already done
+    try:
+        with app.app_context():
+            db.create_all()
+            # Only populate if database is empty
+            if not Student.query.first():
+                populate_initial_data()
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "message": "Database connection error",
+            "error": str(e)
+        }), 503
+    
     return jsonify({
         "status": "healthy",
         "message": "Student Attendance System API is running",
