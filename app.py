@@ -422,13 +422,3 @@ if __name__ == '__main__':
     
     print("Database structure and initial data prepared. Starting Flask app...")
     app.run(debug=True)
-    
-# Auto-update student names on app startup (for production)
-@app.before_first_request
-def update_student_names_on_startup():
-    """Update student names when app starts."""
-    with app.app_context():
-        try:
-            populate_initial_data()
-        except Exception as e:
-            print(f"Warning: Could not update student names on startup: {e}")
