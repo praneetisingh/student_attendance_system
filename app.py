@@ -16,10 +16,8 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'connect_args': {'connect_timeout': 10},  # Connection timeout
     'pool_recycle': 300,  # Recycle connections after 5 minutes
 }
-# Initialize SQLAlchemy but don't connect yet (lazy initialization)
+# Initialize SQLAlchemy (lazy initialization - only connects when used)
 db = SQLAlchemy(app)
-# Set echo to False to avoid connection attempts during import
-db.engine.echo = False
 
 # --- 2. Database Models (E-R Diagram Implementation) ---
 
