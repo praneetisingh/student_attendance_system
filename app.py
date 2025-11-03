@@ -149,9 +149,8 @@ def health_check():
             # Test database connection first
             db.engine.connect()
             db.create_all()
-            # Only populate if database is empty
-            if not Student.query.first():
-                populate_initial_data()
+            # Always update/initialize student names to ensure they're correct
+            populate_initial_data()
     except Exception as e:
         error_msg = str(e)
         # Check if it's a connection issue
@@ -418,8 +417,18 @@ if __name__ == '__main__':
     with app.app_context():
         # Creates the database file and all tables
         db.create_all() 
-        # Populates initial student/course data
+        # Always update student names to ensure they're correct
         populate_initial_data() 
     
     print("Database structure and initial data prepared. Starting Flask app...")
     app.run(debug=True)
+    
+# Auto-update student names on app startup (for production)
+@app.before_first_request
+def update_student_names_on_startup():
+    """Update student names when app starts."""
+    with app.app_context():
+        try:
+            populate_initial_data()
+        except Exception as e:
+            print(f"Warning: Could not update student names on startup: {e}")
